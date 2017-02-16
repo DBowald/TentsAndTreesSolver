@@ -1,11 +1,10 @@
+import copy
+
 board = [["?"] * 10 for i in range(0,11)]
-rowTents = {0: 2, 9:1}
-colTents = {2: 2, 9:1}
+rowTents = {0:0, 1:0, 2:0, 3:1, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0}
+colTents = {0:0, 1:0,2:1,3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 board[2][2] = "O"
-board[0][2] = "O"
-board[2][3] = "X"
-board[2][4] = "O"
-board[10][0] = "X"
+board[3][2] = "X"
 
 def printBoard():
     border = "************"
@@ -17,22 +16,26 @@ def printBoard():
         print("*" + toPrint + "*")
     print(border)
 
+def isValid(row,col):
+    if(isValidSum(row, col) and isValidParity(row,col) and noAdjTents(row, col)):
+        return True
+    return False
+
 def isValidSum(x,y):
     totalRowTents = 1
     totalColTents = 1
 
     for col in board[x]:
-        if col == "O":
+        if col == "X":
             totalRowTents += 1
     if(totalRowTents > rowTents[x]):
         return False
 
     for i in range(0, len(board)):
-        if board[i][y] == "O":
+        if board[i][y] == "X":
             totalColTents += 1
     if(totalColTents > colTents[y]):
         return False
-
     return True
 
 def isValidParity(x,y):
@@ -80,19 +83,6 @@ def getNeighbors(x,y):
         neighbors += [(x, y+1)]
     return neighbors
 
-def getNonAdjGrass():
-    print(len(board[0]))
-    print(len(board))
-    for row in range(0,len(board)):
-        for col in range(0, len(board[0])):
-            if(board[row][col] != "O"):
-                board[row][col] = "."
-                for each in getNeighbors(row, col):
-                    print(row, col, each)
-                    if(board[each[0]][each[1]] == "O"):
-                        board[row][col] = "?"
-                        break
-
 def noAdjTents(x,y):
     for each in getNeighbors(x,y):
         if(board[each[0]][each[1]] == "X"):
@@ -115,8 +105,111 @@ def noAdjTents(x,y):
 
     return True
 
-#getNonAdjGrass()
+
+def getNonAdjGrass():
+    for row in range(0,len(board)):
+        for col in range(0, len(board[0])):
+            if(board[row][col] != "O"):
+                board[row][col] = "."
+                for each in getNeighbors(row, col):
+                    if(board[each[0]][each[1]] == "O"):
+                        board[row][col] = "?"
+                        break
+
+def findUnknown():
+    for row in range(0, len(board)):
+        for col in range(0, len(board[row])):
+            if(board[row][col] == "?"):
+                return (row,col)
+
+    return None
+
+def solve():
+    getNonAdjGrass()
+    if(findUnknown() != None):
+        row, col = findUnknown()
+        return solveRec(row, col)
+    else:
+        if(isGoal()):
+            return True
+        else:
+            return None
+
+def solveRec(row, col):
+    metadata = saveMetadata()
+    if(isValid(row,col)):
+        board[row][col] = "X"
+        if (findUnknown() != None):
+            row, col = findUnknown()
+            if(solveRec(row, col) == True):
+                return True
+            else:
+                restoreMetadata(metadata)
+                board[row][col] = "."
+                if(findUnknown() != None):
+                    row,col = findUnknown()
+                    if (solveRec(row, col) == True):
+                        return True
+                    else:
+                        return None
+                else:
+                    if(isGoal()):
+                        return True
+                    else:
+                        return None
+        else:
+            if(isGoal()):
+                return True
+            else:
+                return None
+    else:
+        board[row][col] = "."
+        if(findUnknown() != None):
+            row, col = findUnknown()
+            if (solveRec(row, col) == True):
+                return True
+            else:
+                return None
+        else:
+            if(isGoal()):
+                return True
+            else:
+                return None
+
+def isGoal():
+    totalRowTents = 0
+    totalColTents = 0
+
+    for row in range(0, len(board)):
+        for col in range(0, len(board[0])):
+            if board[row][col] == "X":
+                totalRowTents += 1
+        if (totalRowTents != rowTents[row]):
+            return False
+        else:
+            totalRowTents = 0
+
+    for col in range(0, len(board[0])):
+        for row in range(0, len(board)):
+            if board[row][col] == "X":
+                totalColTents += 1
+        #print(totalColTents)
+        if (totalColTents != colTents[col]):
+            return False
+        else:
+            totalColTents = 0
+
+        return True
+
+
+def saveMetadata():
+    return (copy.deepcopy(board),
+            copy.deepcopy(rowTents),
+            copy.deepcopy(colTents))
+
+def restoreMetadata(metadata):
+    board,rowTents,colTents = metadata
+
+solve()
 printBoard()
-print(isValidParity(1,2))
-print(noAdjTents(0,0))
-print(isValidSum(0,2))
+print(isGoal())
