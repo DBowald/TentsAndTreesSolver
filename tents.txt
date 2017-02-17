@@ -1,3 +1,5 @@
+Size
+6x6
 Rows
 2
 1

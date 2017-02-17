@@ -1,27 +1,18 @@
 import copy
+import sys
 
-"""
-board = [["?"] * 6 for i in range(0,6)]
-rowTents = {0:2, 1:1, 2:1, 3:1, 4:1, 5:1}
-colTents = {0:1, 1:2, 2:1, 3:1, 4:2, 5:0}
-board[0][1] = "O"
-board[1][0] = "O"
-board[2][2] = "O"
-board[2][4] = "O"
-board[3][4] = "O"
-board[4][2] = "O"
-board[4][4] = "O"
-"""
-board = [["?"] * 6 for i in range(0,6)]
+board = []
 rowTents = {}
 colTents = {}
 
 def init():
     global rowTents, colTents, board
-    f = open("tents.txt","r")
+    f = open(sys.argv[1],"r")
     count = 0
     f.readline()
-
+    line = f.readline().strip().split("x")
+    board = [["?"] * int(line[1]) for i in range(0,int(line[0]))]
+    f.readline()
     while(True):
         line = f.readline().strip()
         if(line == "Columns"):
