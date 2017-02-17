@@ -1,13 +1,23 @@
 import copy
 
-board = [["?"] * 10 for i in range(0,11)]
-rowTents = {0:0, 1:0, 2:0, 3:1, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0}
-colTents = {0:0, 1:0,2:1,3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+board = [["?"] * 6 for i in range(0,6)]
+rowTents = {0:2, 1:1, 2:1, 3:1, 4:1, 5:1}
+colTents = {0:1, 1:2, 2:1, 3:1, 4:2, 5:0}
+board[0][1] = "O"
+board[1][0] = "O"
 board[2][2] = "O"
-board[3][2] = "X"
+board[2][4] = "O"
+board[3][4] = "O"
+board[4][2] = "O"
+board[4][4] = "O"
+
+def init():
+    f = open("tents.txt","r")
+    for line in f:
+        print(line)
 
 def printBoard():
-    border = "************"
+    border = "**" + "*"*len(board[0])
     print(border)
     for row in board:
         toPrint = ""
@@ -136,6 +146,8 @@ def solve():
             return None
 
 def solveRec(row, col):
+    print("------------------------")
+    printBoard()
     metadata = saveMetadata()
     if(isValid(row,col)):
         board[row][col] = "X"
@@ -146,17 +158,10 @@ def solveRec(row, col):
             else:
                 restoreMetadata(metadata)
                 board[row][col] = "."
-                if(findUnknown() != None):
-                    row,col = findUnknown()
-                    if (solveRec(row, col) == True):
-                        return True
-                    else:
-                        return None
+                if (solveRec(row, col) == True):
+                    return True
                 else:
-                    if(isGoal()):
-                        return True
-                    else:
-                        return None
+                    return None
         else:
             if(isGoal()):
                 return True
@@ -193,7 +198,6 @@ def isGoal():
         for row in range(0, len(board)):
             if board[row][col] == "X":
                 totalColTents += 1
-        #print(totalColTents)
         if (totalColTents != colTents[col]):
             return False
         else:
@@ -208,8 +212,9 @@ def saveMetadata():
             copy.deepcopy(colTents))
 
 def restoreMetadata(metadata):
+    global board, rowTents, colTents
     board,rowTents,colTents = metadata
 
-solve()
-printBoard()
-print(isGoal())
+#print(solve())
+#printBoard()
+#print(isGoal())
