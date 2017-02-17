@@ -1,5 +1,6 @@
 import copy
 
+"""
 board = [["?"] * 6 for i in range(0,6)]
 rowTents = {0:2, 1:1, 2:1, 3:1, 4:1, 5:1}
 colTents = {0:1, 1:2, 2:1, 3:1, 4:2, 5:0}
@@ -10,21 +11,61 @@ board[2][4] = "O"
 board[3][4] = "O"
 board[4][2] = "O"
 board[4][4] = "O"
+"""
+board = [["?"] * 6 for i in range(0,6)]
+rowTents = {}
+colTents = {}
 
 def init():
+    global rowTents, colTents, board
     f = open("tents.txt","r")
-    for line in f:
-        print(line)
+    count = 0
+    f.readline()
+
+    while(True):
+        line = f.readline().strip()
+        if(line == "Columns"):
+            break
+        else:
+            rowTents[count] = int(line)
+            count += 1
+    count = 0
+    while (True):
+        line = f.readline().strip()
+        if (line == "Trees"):
+            break
+        else:
+            colTents[count] = int(line)
+            count += 1
+    while(True):
+        line = f.readline().strip()
+        if(line == ""):
+            break
+        else:
+            line = line.split(",")
+            board[int(line[0])][int(line[1])] = "O"
+            print("1")
+    print(colTents)
+    f.close()
+
+
 
 def printBoard():
-    border = "**" + "*"*len(board[0])
+    border = "  * * " + "* "*len(board[0])
+    count = 0
+    bottom = ""
     print(border)
     for row in board:
         toPrint = ""
         for col in row:
-            toPrint += col
-        print("*" + toPrint + "*")
+            toPrint += col + " "
+        print(str(rowTents[count]) + " * " + toPrint + "*")
+        bottom += str(colTents[count]) + " "
+        count += 1
     print(border)
+    print("    " + bottom + " ")
+
+
 
 def isValid(row,col):
     if(isValidSum(row, col) and isValidParity(row,col) and noAdjTents(row, col)):
@@ -215,6 +256,7 @@ def restoreMetadata(metadata):
     global board, rowTents, colTents
     board,rowTents,colTents = metadata
 
-#print(solve())
-#printBoard()
+init()
+print(solve())
+printBoard()
 #print(isGoal())
