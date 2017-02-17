@@ -4,6 +4,8 @@ import sys
 board = []
 rowTents = {}
 colTents = {}
+rowCount = {}
+colCount = {}
 
 def init():
     global rowTents, colTents, board
@@ -12,6 +14,9 @@ def init():
     f.readline()
     line = f.readline().strip().split("x")
     board = [["?"] * int(line[1]) for i in range(0,int(line[0]))]
+    for each in range(0, len(board)):
+        rowCount[each] = 0
+        colCount[each] = 0
     f.readline()
     while(True):
         line = f.readline().strip()
@@ -60,19 +65,9 @@ def isValid(row,col):
     return False
 
 def isValidSum(x,y):
-    totalRowTents = 1
-    totalColTents = 1
-
-    for col in board[x]:
-        if col == "X":
-            totalRowTents += 1
-    if(totalRowTents > rowTents[x]):
+    if(rowCount[x] + 1 > rowTents[x]):
         return False
-
-    for i in range(0, len(board)):
-        if board[i][y] == "X":
-            totalColTents += 1
-    if(totalColTents > colTents[y]):
+    if(colCount[y] + 1 > colTents[y]):
         return False
     return True
 
@@ -163,7 +158,6 @@ def markNonBranching():
 
     for row in range(0, len(board)):
         for col in range(0, len(board[0])):
-            print(totalRowOccupants)
             if board[row][col] == "O" or board[row][col] == ".":
                 totalRowOccupants += 1
             if(rowTents[row] == 0 and board[row][col] != "O"):
@@ -185,6 +179,34 @@ def markNonBranching():
                 if (board[i][col] == "?"):
                     board[i][col] = "X"
         totalColOccupants = 0
+
+def markTentRowCol(x,y):
+    totalRowOccupants = 0
+    totalColOccupants = 0
+
+    for col in range(0, len(board[0])):
+        if board[x][col] == "O" or board[x][col] == ".":
+            totalRowOccupants += 1
+    if (len(board[0]) - totalRowOccupants == rowTents[x]):
+        for j in range(0, len(board[0])):
+            if(board[x][j] == "?"):
+                board[x][j] = "X"
+    if(rowTents[x] == rowCount[x]):
+        for j in range(0, len(board[0])):
+            if(board[x][j] == "?"):
+                board[x][j] = "."
+
+    for row in range(0, len(board)):
+        if (board[row][y] == "O" or board[row][y] == "."):
+            totalColOccupants += 1
+    if (len(board) - totalColOccupants == colTents[col]):
+        for i in range(0, len(board)):
+            if (board[i][y] == "?"):
+                board[i][y] = "X"
+        if (colTents[y] == colCount[y]):
+            for i in range(0, len(board)):
+                if (board[i][y] == "?"):
+                    board[i][y] = "."
 
 def findUnknown():
     for row in range(0, len(board)):
@@ -213,7 +235,10 @@ def solveRec(row, col):
     metadata = saveMetadata()
     if(isValid(row,col)):
         board[row][col] = "X"
+        colCount[col] += 1
+        rowCount[row] += 1
         markTentAdjGrass(row, col)
+        markTentRowCol(row,col)
         if (findUnknown() != None):
             row, col = findUnknown()
             if(solveRec(row, col) == True):
@@ -272,15 +297,15 @@ def isGoal():
 def saveMetadata():
     return (copy.deepcopy(board),
             copy.deepcopy(rowTents),
-            copy.deepcopy(colTents))
+            copy.deepcopy(colTents),
+            copy.deepcopy(rowCount),
+            copy.deepcopy(colCount))
 
 def restoreMetadata(metadata):
-    global board, rowTents, colTents
-    board,rowTents,colTents = metadata
+    global board, rowTents, colTents, rowCount, colCount
+    board,rowTents,colTents, rowCount, colCount = metadata
 
 init()
 print(solve())
 printBoard()
-
-printBoard()
-#print(isGoal())
+print(isGoal())
