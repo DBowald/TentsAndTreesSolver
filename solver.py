@@ -1,3 +1,14 @@
+"""
+AUTHOR: Dylan Bowald
+
+Read the README for a project overview!
+
+Since I kind of awkwardly did this in one file
+(it ended up being a lot longer than I thought),
+I went ahead and seperated it into sections for
+reader convenience.
+"""
+
 import copy
 import sys
 
@@ -7,6 +18,13 @@ colTents = {}
 rowCount = {}
 colCount = {}
 
+#####################################################################
+# INITIALIZATION AND REPRESENTATION
+#####################################################################
+
+"""
+Initializes the global board object based on the given file
+"""
 def init():
     global rowTents, colTents, board
     f = open(sys.argv[1],"r")
@@ -42,6 +60,7 @@ def init():
             board[int(line[0])][int(line[1])] = "O"
     f.close()
 
+"""Displays the ascii graphic representing the global game board"""
 def printBoard():
     border = "  * * " + "* "*len(board[0])
     count = 0
@@ -57,13 +76,19 @@ def printBoard():
     print(border)
     print("    " + bottom + " ")
 
+#####################################################################
+# VALIDITY CHECKING
+#####################################################################
 
-
+"""Checks whether a move at <row, col> is valid within the rules
+of tents and trees"""
 def isValid(row,col):
     if(isValidSum(row, col) and isValidParity(row,col) and noAdjTents(row, col)):
         return True
     return False
 
+"""Checks whether placing a tent at <row,col> would exceed any of
+the given row or column numbers"""
 def isValidSum(x,y):
     if(rowCount[x] + 1 > rowTents[x]):
         return False
@@ -71,6 +96,9 @@ def isValidSum(x,y):
         return False
     return True
 
+"""Checks the parity of trees to tents. Essentially, it moves
+between a connected chain of tent/tree pairs, and makes sure at
+the end the number of trees matches the number of tents"""
 def isValidParity(x,y):
     parity = -1
     pred = [(x,y)]
@@ -82,6 +110,11 @@ def isValidParity(x,y):
     else:
         return False
 
+"""
+Helper function for isValidParity. Called on a tent
+to check for any trees around it, and recursively return the tree
+to tent parity.
+"""
 def countTreesRec(x,y, pred):
     pred += [(x,y)]
     if(board[x][y] == "O"):
@@ -93,6 +126,11 @@ def countTreesRec(x,y, pred):
     else:
         return 0
 
+"""
+Helper function for isValidParity. Called on a tree to
+check for any tents around it, and recursively return the tree
+to tent parity.
+"""
 def countTentsRec(x,y, pred):
     pred += [(x,y)]
     if (board[x][y] == "X"):
@@ -104,6 +142,24 @@ def countTentsRec(x,y, pred):
     else:
         return 0
 
+"""
+Check that there are no tents adjacent to a given location
+"""
+def noAdjTents(x,y):
+    for each in getTentAdjacent(x,y):
+        if(board[each[0]][each[1]] == "X"):
+            return False
+
+    return True
+
+#####################################################################
+# HELPER FUNCTIONS
+#####################################################################
+
+"""
+Get the vertical and horizontal neighbors at a given
+grid coordinate, returned as a list of coordinates.
+"""
 def getNeighbors(x,y):
     neighbors = []
     if(x > 0):
@@ -116,6 +172,10 @@ def getNeighbors(x,y):
         neighbors += [(x, y+1)]
     return neighbors
 
+"""
+Get the vertical, horizontal, and diagonal neighbors at a given
+grid coordinate, returned as a list of coordinates.
+"""
 def getTentAdjacent(x,y):
     neighbors = getNeighbors(x,y)
     if (x > 0 and y > 0):
@@ -129,14 +189,73 @@ def getTentAdjacent(x,y):
 
     return neighbors
 
-def noAdjTents(x,y):
-    for each in getTentAdjacent(x,y):
-        if(board[each[0]][each[1]] == "X"):
+"""
+Polls for an unknown space, and if it finds one,
+returns it as a coordinate.
+"""
+def findUnknown():
+    for row in range(0, len(board)):
+        for col in range(0, len(board[row])):
+            if(board[row][col] == "?"):
+                return (row,col)
+
+    return None
+
+"""
+Checks the board against the game constraints
+to see whether or not we have reached a goal
+state. Returns true if so, false otherwise.
+"""
+def isGoal():
+    totalRowTents = 0
+    totalColTents = 0
+
+    for row in range(0, len(board)):
+        for col in range(0, len(board[0])):
+            if board[row][col] == "X":
+                totalRowTents += 1
+        if (totalRowTents != rowTents[row]):
             return False
+        else:
+            totalRowTents = 0
 
-    return True
+    for col in range(0, len(board[0])):
+        for row in range(0, len(board)):
+            if board[row][col] == "X":
+                totalColTents += 1
+        if (totalColTents != colTents[col]):
+            return False
+        else:
+            totalColTents = 0
 
+        return True
 
+    """
+    Returns a deepcopy of all the global state.
+    """
+
+def saveMetadata():
+    return (copy.deepcopy(board),
+            copy.deepcopy(rowTents),
+            copy.deepcopy(colTents),
+            copy.deepcopy(rowCount),
+            copy.deepcopy(colCount))
+
+"""
+Assigns the global state to a given tuple of metadata.
+"""
+
+def restoreMetadata(metadata):
+    global board, rowTents, colTents, rowCount, colCount
+    board, rowTents, colTents, rowCount, colCount = metadata
+
+#####################################################################
+# STRATEGIES
+#####################################################################
+
+"""
+Mark any spaces not adjacent to a tree as grass
+"""
 def getNonAdjGrass():
     for row in range(0,len(board)):
         for col in range(0, len(board[0])):
@@ -147,11 +266,21 @@ def getNonAdjGrass():
                         board[row][col] = "?"
                         break
 
+"""
+Marks any spaces adjacent to a placed tent as grass
+"""
 def markTentAdjGrass(x,y):
     for each in getTentAdjacent(x, y):
         if (board[each[0]][each[1]] != "O"):
             board[each[0]][each[1]] = "."
 
+"""
+Checks the row and column numbers, then marks
+any rows or columns with a 0 as grass. Also
+checks to see if any of them have the same number
+of open spaces as tents needed, and if they do, fills
+in those spaces with tents.
+"""
 def markNonBranching():
     totalRowOccupants = 0
     totalColOccupants = 0
@@ -180,12 +309,20 @@ def markNonBranching():
                     board[i][col] = "X"
         totalColOccupants = 0
 
+"""
+Checks the given row and column numbers, then
+checks to see if they have the same number
+of open spaces as tents needed, and if they do,
+fills n those spaces with tents. Compares number
+of tents to row and column numbers, and if equal,
+fills in the rest of the spaces with grass.
+"""
 def markTentRowCol(x,y):
     totalRowOccupants = 0
     totalColOccupants = 0
 
     for col in range(0, len(board[0])):
-        if board[x][col] == "O" or board[x][col] == ".":
+        if board[x][col] == "O" or board[x][col] == "." or board[x][col] == "X":
             totalRowOccupants += 1
     if (len(board[0]) - totalRowOccupants == rowTents[x]):
         for j in range(0, len(board[0])):
@@ -197,7 +334,7 @@ def markTentRowCol(x,y):
                 board[x][j] = "."
 
     for row in range(0, len(board)):
-        if (board[row][y] == "O" or board[row][y] == "."):
+        if (board[row][y] == "O" or board[row][y] == "." or board[row][y] == "X"):
             totalColOccupants += 1
     if (len(board) - totalColOccupants == colTents[col]):
         for i in range(0, len(board)):
@@ -208,14 +345,10 @@ def markTentRowCol(x,y):
                 if (board[i][y] == "?"):
                     board[i][y] = "."
 
-def findUnknown():
-    for row in range(0, len(board)):
-        for col in range(0, len(board[row])):
-            if(board[row][col] == "?"):
-                return (row,col)
-
-    return None
-
+"""
+Primary function to start the solving process. Runs the pre-move
+strategies, then calls the recursive solver.
+"""
 def solve():
     getNonAdjGrass()
     markNonBranching()
@@ -229,6 +362,14 @@ def solve():
         else:
             return None
 
+"""
+Recursive solver function. Checks for an empty
+spot, then attempts to put a tent there. Runs the
+other strategies, then recurse. If there are no
+unknowns left, it checks to see if we've reached a goal
+state; if we have, it returns true to signify the goal
+has been reached.
+"""
 def solveRec(row, col):
     #print("------------------------")
     #printBoard()
@@ -269,43 +410,12 @@ def solveRec(row, col):
             else:
                 return None
 
-def isGoal():
-    totalRowTents = 0
-    totalColTents = 0
-
-    for row in range(0, len(board)):
-        for col in range(0, len(board[0])):
-            if board[row][col] == "X":
-                totalRowTents += 1
-        if (totalRowTents != rowTents[row]):
-            return False
-        else:
-            totalRowTents = 0
-
-    for col in range(0, len(board[0])):
-        for row in range(0, len(board)):
-            if board[row][col] == "X":
-                totalColTents += 1
-        if (totalColTents != colTents[col]):
-            return False
-        else:
-            totalColTents = 0
-
-        return True
-
-
-def saveMetadata():
-    return (copy.deepcopy(board),
-            copy.deepcopy(rowTents),
-            copy.deepcopy(colTents),
-            copy.deepcopy(rowCount),
-            copy.deepcopy(colCount))
-
-def restoreMetadata(metadata):
-    global board, rowTents, colTents, rowCount, colCount
-    board,rowTents,colTents, rowCount, colCount = metadata
-
+"""
+In all but name, my main function. Starts everything.
+"""
 init()
-print(solve())
-printBoard()
-print(isGoal())
+if(solve()):
+    print("Found a solution: ")
+    printBoard()
+else:
+    print("Sorry, no solution could be found")
