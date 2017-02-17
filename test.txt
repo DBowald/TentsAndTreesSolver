@@ -1,0 +1,14 @@
+Size
+4x4
+Rows
+0
+1
+0
+1
+Columns
+0
+1
+0
+1
+Trees
+1,1
